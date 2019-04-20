@@ -4,7 +4,10 @@
 
 %inital config vars
 videoName = 'drawStringTest';
-rsName = strcat(videoName,'_resampled');
+rsName  = strcat(videoName,'_resampled');
+ampName = strcat(videoName,'_amplified');
+vfName  = strcat(videoName,'_vectorField');
+segName = strcat(videoName,'_segmented');
 
 %import video into a 4d matrix [y,x,t,color]
 vid = utils.importVid(videoName);
@@ -38,12 +41,18 @@ utils.saveVid(vid,rsName);
 %import video
 vid = utils.importVid(rsName);
 
+%%
 %init and config motionAmpConfig structure
+bw = 4; %hz
+Fpass = [.5 1.5];
+fs = 30;
 
 %amplify video
-ampVid = amplify(vid,motionAmpConfig); %[y,x,t,color], full color
+ampVid = amplify(vid,bw,Fpass,fs); %return [y,x,t,color]
 
+%%
 %write to disk
+utils.saveVide(ampVid,ampName);
 
 %% develop a vector field from the amplified video
 
