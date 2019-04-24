@@ -3,7 +3,8 @@
 %% import and configure video
 
 %inital config vars
-videoName = 'drawStringTest';
+%videoName = 'drawStringTest';
+videoName = 'quietBreathingShort';
 rsName  = strcat(videoName,'_resampled');
 ampName = strcat(videoName,'_amplified');
 vfName  = strcat(videoName,'_vectorField');
@@ -62,4 +63,11 @@ vf = VectorField(ampVid); % return [y,x,t,vel(2)]?
 
 %% segment the video into meaningful segments
 
-segVid = segment(ampVid,vf); %return [y,x,t,color]
+%read in video
+featureMat = utils.importVid(videoName);
+
+%segment
+segVid = Segment(featureMat,ones(5,1)); %return [y,x,t,feature]
+
+%save
+utils.saveVid(segVid,segName)
