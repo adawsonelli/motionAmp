@@ -14,7 +14,7 @@ classdef utils
             vidPath = strcat('../data/',fileName,'.mp4');
             vr = VideoReader(vidPath);
             nColorChannels = 3;
-            vid = zeros(vr.Height,vr.Width,vr.NumberOfFrames,nColorChannels);
+            vid = zeros(vr.Height,vr.Width,vr.NumberOfFrames,nColorChannels,'single');
             
             %have to recreate vr after reading numberofframes....wierd
             vr = VideoReader(vidPath);

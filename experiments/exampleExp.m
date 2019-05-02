@@ -3,13 +3,19 @@
 %% import and configure video
 
 %inital config vars
-videoName = 'drawStringTest';
-rsName = strcat(videoName,'_resampled');
+%videoName = 'drawStringTest';
+videoName = 'quietBreathingShort';
+rsName  = strcat(videoName,'_resampled');
+ampName = strcat(videoName,'_amplified');
+vfName  = strcat(videoName,'_vectorField');
+segName = strcat(videoName,'_segmented');
+
+
+%% downsample video to the appropriate y,x size
 
 %import video into a 4d matrix [y,x,t,color]
 vid = utils.importVid(videoName);
 
-%% downsample video to the appropriate y,x size
 % select the downsampling method of your choosing
 dsMethod = 0;
 height = 600; width = 800; sf = .5;
@@ -35,15 +41,20 @@ utils.saveVid(vid,rsName);
 
 %% amplify motion within the video
 
-%import video
-vid = utils.importVid(rsName);
+%clear globally scoped instance of vid
+clear vid
 
 %init and config motionAmpConfig structure
+alpha = 5;
+Fpass = [.5 1.5];  %passBand
+fs = 30;
 
 %amplify video
-ampVid = amplify(vid,motionAmpConfig); %[y,x,t,color], full color
+ampVid = amplify(rsName,alpha,Fpass,fs); %return [y,x,t,color]
 
+%%
 %write to disk
+utils.saveVid(ampVid,ampName);
 
 %% develop a vector field from the amplified video
 
@@ -52,4 +63,11 @@ vf = VectorField(ampVid); % return [y,x,t,vel(2)]?
 
 %% segment the video into meaningful segments
 
-segVid = segment(ampVid,vf); %return [y,x,t,color]
+%read in video
+featureMat = utils.importVid(videoName);
+
+%segment
+segVid = Segment(featureMat,ones(5,1)); %return [y,x,t,feature]
+
+%save
+utils.saveVid(segVid,segName)

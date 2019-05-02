@@ -1,60 +1,44 @@
-function [vid] = genSineWave(size,wl,amp)
-%generate a Sine wave that can be used as a synthetic test image to
-%evaluate the quality of the motion amplification and vector field
-%inputs:
-%   size - dim[y,x,t] of desired video
-%   wl   - number of wave lengths across the y dimension
-%   amp  - amplitude as a fraction of the x dimnsion (0-1]
-%outputs:
-%   vid  - video with a moving sinewave in it
-
-%% generate the sinewave
-
-"""
-make a test video for evaluating motion amplification of a pure sign wave
-"""
-
-def genTestVideo():
-    """
-    adjust function signature in future...
-    return: 3d np.array [x,y,t]
-    """
-    # define properties of the wave functions
-
-    # wavelengths
-    lambda_x = 20  #wavelength is [pixels / cycle]
-    lambda_y = 100  #wavelength in [pixels / cycle]
-    f_t = 2         #spacial frequency in [Hz]
-
-    #amplitudes
-    Ax = 127.5      #[gray levels]
-    Ay = 0          #[pixels]
-    At = 100        #[pixels]
-
-    # initialize array of the appropriate size
-    x = 800; y = 600 ;  t = 10 ; dt = .01
-    tVec = np.arange(0,t,dt)
-    xVec = np.arange(0,x)
-    yVec = np.arange(0,y)
-
-    video = np.zeros((x,y,len(tVec)), dtype = np.uint8)
-
-    # populate array according to specified resolution and frequency
-    for t in range(len(tVec)- 1):
-        phi = np.sin(t/100)
-
-        #populate video frame
-        for row in range(y):
-            video[:,row,t] = Ax * np.sin(xVec/lambda_x + .2*phi) + Ax
+function [vid] = genSineWave2(shape,lambda,lamp,orientation,dt,phaseAmp,freq)
+%GENSINEWAVE2 make a sine wave video with the specified parameters
+% inputs:
+%%spacial vars
+%   shape       - [pixels,pixels,frames] [y x t] matrix 
+%   lambda      - [pixels/cycle] period of the sinusoid 
+%   lamp        - [0-1] luminance amplitude
+%   orientation - [rad] orientation of the sine wave
+%%temporal vars    
+%   dt          - [sec] time between frames               
+%   phaseAmp    - [pixels] amplitude of the changing phase 
+%   freq        - [1/sec] frequency of oscillation 
+% output:
+%   
 
 
-    return video
+%define default arguments
+if ~exist('size')        ; shape   = [512,512,100] ; end
+if ~exist('lambda')      ; lambda = 100            ; end
+if ~exist('lamp')        ; lamp = 1                ; end
+if ~exist('orientation') ; orientation = 0         ; end
+if ~exist('dt')          ; dt = 1/30               ; end
+if ~exist('phaseAmp')    ; phaseAmp = 3            ; end
+if ~exist('freq')        ; freq = 2                ; end
 
-tst = genTestVideo()
-print(tst.shape)
 
+%make 4D array from parameters
+sz = shape(1:2); frames = shape(3);
+vid = zeros([shape,3],'single');
+for f=1:frames
+    phasePixels = phaseAmp * sin(2*pi*freq*(f*dt));     %[pixels]
+    phase = (1/lambda) * phasePixels * 2*pi;            %[rad]
+    swv = mkSine(sz, lambda, orientation, lamp, phase); %[-1 1]
+    for ch=1:3
+        vid(:,:,f,ch) = uint8(((swv + 1)/2)*255);            %[0-255]
+    end
+   
+end
 
+% something is possibly off by a scale factor?? - look into if required.
 
-%duplicate it into 3 channels.
 
 end
+
