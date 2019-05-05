@@ -1,4 +1,4 @@
-function [outFrames, x, y, U, V] = vectorField(vid, coords, grid_MN, TW, SW)
+function outFrames = vectorField(vid, coords, grid_MN)
 %generates a vector field using explicit calculation of optic flow 
 %inputs:
 %   vid - video from which velocity will be extracted dim[y,x,t,color]
@@ -16,7 +16,8 @@ function [outFrames, x, y, U, V] = vectorField(vid, coords, grid_MN, TW, SW)
     colN = grid_MN(2);
 
     %coords variable is [xmin ymin width height];
-    
+    SW = 10;   % Half size of the search window
+    TW = 6; % Half size of the template window 
     %grid_MN = [30, 40] % Number of rows and cols in the grid
     
     orig_imsetting = iptgetpref('ImshowBorder');
@@ -27,45 +28,49 @@ function [outFrames, x, y, U, V] = vectorField(vid, coords, grid_MN, TW, SW)
 
     %Sample at a different rate
     step = 10;
+    totFrames = floor(frames/(step-1));
     U = zeros([rowN, colN, frames]);
     V = zeros([rowN, colN, frames]);
     ind = 1;
-    
     for i = 1:step-1:frames-step
         %Result = binary mask of quiver plot
         [x, y, U(:,:,i), V(:,:,i)] = computeFlow(vid(ymin:ymin+H,xmin:xmin+W,i,:), vid(ymin:ymin+H,xmin:xmin+W, i+(step-1), :), SW, TW, rowN, colN);
         ind = ind+1;
     end
     
-    %Interpolate along the 3rd dimension (Manually, unfortunately)
-    for i = 1:step-1:frames-step
-        diffU = (U(:,:,i+(step-1)) - U(:,:,i))./(step-2) ;
-        diffV = (V(:,:,i+(step-1)) - V(:,:,i))./(step-2) ;
-        for j = 1:step-2
-            U(:,:,i+j) = U(:,:, i+j-1) + diffU;
-            V(:,:,i+j) = V(:,:, i+j-1) + diffV;
-        end
-    end
-
-    %Loop through all frames-step, save as video
-    for i=2:frames-step+2
-        fh1 = figure('Visible','off'); 
-        imshow(uint8(squeeze(vid(:,:, i, :))));
-        hold on;
-        %Seemed to need a median filter to cancel out noisy vectors that messed
-        %up the scaling for the other points, in the ~flow images
-        quiver(x+xmin, y+ymin , U(:,:,i-1), V(:,:,i-1), 'g');
-
-        figure(fh1);
-        set(fh1, 'WindowStyle', 'normal');
-        image = getimage(fh1);
-        truesize(fh1, [height, width]);
-        frame = getframe(fh1);
-        saveFrame = frame.cdata;
-        outFrames(:,:,i,:) = saveFrame;
-        close(fh1);
+    %Interpolate along the 3rd dimension
+    diffU = zeros([rowN, colN, totFrames-1]);
+    diffV = zeros([rowN, colN, totFrames-1]);
     
+    for i=1:totFrames-1
+        diffU(:,:,i) = (U(:,:,i+1) - U(:,:,i))./(step-2) ;
+        diffV(:,:,i) = (V(:,:,i+1) - V(:,:,i))./(step-2) ;
     end
+ 
+    
+    
+    %close all;
+
+    %fh1 = figure(); %'Visible','off'
+%     imshow(uint8(squeeze(vid(:,:, i, :))));
+%     hold on;
+%     %Seemed to need a median filter to cancel out noisy vectors that messed
+%     %up the scaling for the other points, in the ~flow images
+%     quiver(x+xmin, y+ymin , U, V, 'g', 'LineWidth',1.5);
+% 
+%     figure(fh1);
+%     set(fh1, 'WindowStyle', 'normal');
+%     image = getimage(fh1);
+%     truesize(fh1, [height, width]);
+%     frame = getframe(fh1);
+%     saveFrame = frame.cdata;
+%     outFrames(:,:,i,:) = saveFrame;
+    
+    %close(fh1);
+    %Make larger binary mask on whole frame size
+    %Write out binary mask on all subsequent frames
+    %imwrite(result, ['result' num2str(i-1) '_' num2str(i) '.png']);
+    
     
     function [x, y, U, V] = computeFlow(colImg1, colImg2, rS, rT, rowN, colN)
         img1 = colImg1(:,:,1);

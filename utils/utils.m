@@ -45,11 +45,36 @@ classdef utils
                 writeVideo(v,frame)
             end
             close(v)
-                
-            
-            
+                    
         end
         
+        function rect = chooseTarget(vidImg)
+            % chooseTarget displays an image and asks the user to drag a rectangle
+            % around a tracking target
+            % 
+            % arguments:
+            % data_params: a structure contains data parameters
+            % rect: [xmin ymin width height]
+
+            % Reading the first frame from the video stack
+            img = vidImg(:,:,1);
+
+            % Pick an initial tracking location
+            fig = figure;
+            imshow(uint8(img));
+            %disp('===========');
+            %disp('Drag a rectangle around the tracking target: ');
+            h = imrect;
+            rect = round(h.getPosition);
+
+            % To make things easier, let's make the height and width all odd
+            if mod(rect(3), 2) == 0, rect(3) = rect(3) + 1; end
+            if mod(rect(4), 2) == 0, rect(4) = rect(4) + 1; end
+            %str = mat2str(rect);
+            %disp(['[xmin ymin width height]  = ' str]);
+            %disp('===========');
+            close(fig);
+        end
             
     end
     
