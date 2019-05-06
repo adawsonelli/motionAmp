@@ -76,45 +76,58 @@ grid_MN = [40, 50]; %inputs are [rows, cols] resolution size
 utils.saveVid(outFrames,'BreathingVectors');
 disp("Done!");
 
-
 %% Get airflow at different slice heights
-[rows, cols] = size(vid(:,:,1));
+SW = 10;   % Half size of the search window
+grid_MN = [40, 50];
+[rows, cols, frames, ~] = size(vid);
 rowN = grid_MN(1);
 colN = grid_MN(2);
 rowrange = floor(linspace(1+SW, rows-SW, rowN)); %yvals
 colrange = floor(linspace(1+SW, cols-SW, colN)); %xvals
+[ex,ey] = meshgrid(colrange, rowrange);
 
 imshow(uint8(vid(:,:,1)))
 [height, width] = ginput(1);
 % convert overall dimensions, numus ymin, consider smaller resolution...
 ymin = coords(2);
 wHeight = coords(4);
-approxheight = ceil((ymin - height)/(rows/rowN));
-%%
+approxheight = ceil((height - ymin)/(wHeight/rowN));
 
-
-%Using cutoff method for boundry cases, as long as the window
-%half-size is not larger than the 2*step width
-[ex,ey] = meshgrid(colrange, rowrange);
-magnitudes = (U.^2 + V.^2).^(1/2);
+magnitudes = (U.^2 + V.^2).^(1/2); %since U,V, are already in the form (x2-x1), (y2-y1)
 
 %Plot things
-[Nx,Ny] = meshgrid(1:296, 1:50);
+[Nx,Ny] = meshgrid(1:frames, 1:grid_MN(2));
 figure;
-surf(Nx, Ny, squeeze(magnitudes(20,:,:)))
+surf(Nx, Ny, squeeze(magnitudes(approxheight,:,:)))
 ylabel("Horizontal Axis"); xlabel("Time"); zlabel("Vector Magnitudes");
 
-%% Interpolate U,V so all pixels have a value
-[m,n,f] = size(U);
-[rows, cols] = size(vid(:,:,1));
-[X, Y] = meshgrid(1:n, 1:m);
-[xq, yq] = meshgrid(1:n/cols:n, 1:m/rows:m);
-for i=1:f
-    Uq = interp2(X,Y, U(:,:,i),xq,yq, 'linear');
-end
-%Doesn't quite work.
+%% Save surf plots
+orig_imsetting = iptgetpref('ImshowBorder');
+iptsetpref('ImshowBorder', 'tight');
+temp1 = onCleanup(@()iptsetpref('ImshowBorder', orig_imsetting));
+[Mx,My] = meshgrid(1:grid_MN(2), 1:grid_MN(1));
 
-%% segment the video into meaningful segments
+for i=1:frames-1
+
+    fh1 = figure('Visible','off'); 
+    surf(Mx, My, squeeze(magnitudes(:,:,i)))
+    set(gca, 'YDir','reverse')
+    zlim([0 12]) 
+    view([-35 66])
+    figure(fh1);
+    set(fh1, 'WindowStyle', 'normal');
+    image = getimage(fh1);
+    %truesize(fh1, [height, width]);
+    frame = getframe(fh1);
+    saveFrame = frame.cdata;
+    outFrames(:,:,i,:) = saveFrame;
+    close(fh1);
+end
+%
+utils.saveVid(outFrames,'3DPlots');
+disp("Done!");
+
+%% segment the video into meaningful segments from RGB features
 
 %read in video
 featureMat = utils.importVid(videoName);
