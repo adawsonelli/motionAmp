@@ -1,4 +1,4 @@
-function [ampVid] = amplify(vidName,alpha,Fpass,fs)
+function [ampVid] = Amplify(vidName,alpha,Fpass,fs)
 %amplify the motion in a video using a phase-based, eulerian approach that 
 %relys on steerable pyramids
 
